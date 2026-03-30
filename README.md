@@ -52,7 +52,7 @@ This project is split across two branches:
 | Branch | What's In It |
 |--------|-------------|
 | `master` | Interactive frontend demo (`interactive-demo.html`), React source (`adaptive-ticket-pricing-site/`) |
-| `backend` | Complete Spring Boot project — entities, services, controllers, security, tests, Docker, AWS configs, docs |
+| `backend` | Complete Spring Boot project — entities, services, controllers, security, tests, Docker, AWS configs |
 
 ## Tech Stack
 
