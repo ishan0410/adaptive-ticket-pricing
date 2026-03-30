@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: adaptive-ticket-pricing
+
+  # ── Database (local dev — points to local MySQL) ──
+  datasource:
+    url: jdbc:mysql://localhost:3306/adaptive_ticket?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # ── HikariCP Connection Pool ──
+    # Tuned after load testing. Default max was 10, which caused connection
+    # exhaustion under 200+ concurrent users. Increased to 20 with careful
+    # idle timeout to avoid hogging RDS connections.
+    hikari:
+      pool-name: AdaptiveTicketPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000        # 5 min — release idle connections back to RDS
+      max-lifetime: 1800000       # 30 min — rotate connections before RDS timeout
+      connection-timeout: 20000   # 20 sec — fail fast if pool is exhausted
+      leak-detection-threshold: 60000  # log warning if connection held > 60s
+
+  # ── JPA / Hibernate ──
+  jpa:
+    hibernate:
+      ddl-auto: validate    # never auto-create in production; use schema.sql
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 25     # batch inserts for ticket creation
+        order_inserts: true
+        order_updates: true
+
+  # ── Jackson ──
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ── JWT ──
+app:
+  jwt:
+    secret: ${JWT_SECRET:dGhpcyBpcyBhIGRldmVsb3BtZW50IHNlY3JldCBrZXkgdGhhdCBzaG91bGQgYmUgcmVwbGFjZWQ=}
+    expiration-ms: 86400000  # 24 hours
+
+# ── Actuator (health check for ALB) ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# ── Server ──
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/plain
+    min-response-size: 1024
+
+# ── Logging ──
+logging:
+  level:
+    com.adaptiveticket: INFO
+    org.springframework.security: WARN
+    com.zaxxer.hikari: DEBUG     # monitor pool in dev

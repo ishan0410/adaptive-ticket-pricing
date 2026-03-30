@@ -1,0 +1,58 @@
+# ── Production profile (AWS EC2 + RDS) ──
+# Activated via: java -jar app.jar --spring.profiles.active=prod
+# Environment variables are set via EC2 user data or SSM Parameter Store.
+
+spring:
+  datasource:
+    # RDS MySQL endpoint (private subnet, not publicly accessible)
+    url: jdbc:mysql://${RDS_HOSTNAME}:${RDS_PORT:3306}/${RDS_DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=UTC
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+
+    hikari:
+      pool-name: AdaptiveTicketPool-Prod
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema managed by migration scripts, never auto-generated
+    show-sql: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}     # injected from AWS SSM Parameter Store
+    expiration-ms: 86400000
+
+# ── Actuator endpoints for CloudWatch and ALB health checks ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    export:
+      cloudwatch:
+        namespace: AdaptiveTicketPricing
+        enabled: true
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json
+
+logging:
+  level:
+    com.adaptiveticket: INFO
+    org.springframework.security: WARN
+    com.zaxxer.hikari: INFO     # reduce noise in prod
+  file:
+    name: /var/log/adaptive-ticket/application.log
