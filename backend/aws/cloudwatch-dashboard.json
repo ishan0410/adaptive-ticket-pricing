@@ -1,0 +1,116 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "API Response Time (p50, p95, p99)",
+        "metrics": [
+          ["AdaptiveTicketPricing", "http.server.requests.p50", "uri", "/api/events"],
+          ["AdaptiveTicketPricing", "http.server.requests.p95", "uri", "/api/events"],
+          ["AdaptiveTicketPricing", "http.server.requests.p99", "uri", "/api/events"],
+          ["AdaptiveTicketPricing", "http.server.requests.p95", "uri", "/api/tickets/purchase"]
+        ],
+        "period": 60,
+        "stat": "Average",
+        "region": "us-east-1",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "Request Count by Endpoint",
+        "metrics": [
+          ["AdaptiveTicketPricing", "http.server.requests.count", "uri", "/api/events"],
+          ["AdaptiveTicketPricing", "http.server.requests.count", "uri", "/api/tickets/purchase"],
+          ["AdaptiveTicketPricing", "http.server.requests.count", "uri", "/api/auth/login"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "title": "EC2 CPU Utilization (Auto Scaling Group)",
+        "metrics": [
+          ["AWS/EC2", "CPUUtilization", "AutoScalingGroupName", "adaptive-ticket-asg"]
+        ],
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "annotations": {
+          "horizontal": [
+            { "label": "Scale-out threshold", "value": 60, "color": "#ff6600" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "title": "RDS Connections & CPU",
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "adaptive-ticket-db"],
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "adaptive-ticket-db"]
+        ],
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "annotations": {
+          "horizontal": [
+            { "label": "Connection pool max", "value": 20, "color": "#ff0000" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "title": "HikariCP Pool Metrics",
+        "metrics": [
+          ["AdaptiveTicketPricing", "hikaricp.connections.active"],
+          ["AdaptiveTicketPricing", "hikaricp.connections.idle"],
+          ["AdaptiveTicketPricing", "hikaricp.connections.pending"]
+        ],
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 12, "width": 12, "height": 6,
+      "properties": {
+        "title": "HTTP Error Rates (4xx, 5xx)",
+        "metrics": [
+          ["AdaptiveTicketPricing", "http.server.requests.count", "status", "4xx"],
+          ["AdaptiveTicketPricing", "http.server.requests.count", "status", "5xx"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 12, "width": 12, "height": 6,
+      "properties": {
+        "title": "ALB Healthy/Unhealthy Hosts",
+        "metrics": [
+          ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", "adaptive-ticket-tg"],
+          ["AWS/ApplicationELB", "UnHealthyHostCount", "TargetGroup", "adaptive-ticket-tg"]
+        ],
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    }
+  ]
+}

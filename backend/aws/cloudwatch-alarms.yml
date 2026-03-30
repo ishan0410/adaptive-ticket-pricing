@@ -1,0 +1,87 @@
+# CloudWatch Alarm definitions
+# Deploy via: aws cloudformation deploy --template-file cloudwatch-alarms.yml
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudWatch alarms for Adaptive Ticket Pricing
+
+Parameters:
+  SNSTopicArn:
+    Type: String
+    Description: SNS topic ARN for alarm notifications
+
+Resources:
+
+  # ── API Error Rate > 1% ──
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: adaptive-ticket-high-error-rate
+      AlarmDescription: >
+        API 5xx error rate exceeds 1% of total requests.
+        Possible causes: unhandled exception, database connection failure, OOM.
+      Namespace: AdaptiveTicketPricing
+      MetricName: http.server.requests.error.rate
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 0.01
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+
+  # ── P95 Latency > 500ms ──
+  HighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: adaptive-ticket-high-latency
+      AlarmDescription: >
+        P95 API latency exceeds 500ms for 2 consecutive periods.
+        Check: slow queries, connection pool exhaustion, CPU saturation.
+      Namespace: AdaptiveTicketPricing
+      MetricName: http.server.requests.p95
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+
+  # ── RDS CPU > 80% ──
+  RDSHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: adaptive-ticket-rds-high-cpu
+      AlarmDescription: >
+        RDS instance CPU exceeds 80%. May indicate: missing index,
+        expensive full-table scan, or under-provisioned instance class.
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: adaptive-ticket-db
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+
+  # ── DB Connections > 90% of pool ──
+  DBConnectionPoolAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: adaptive-ticket-db-pool-exhaustion
+      AlarmDescription: >
+        HikariCP active connections exceed 18 (90% of max 20).
+        If this fires, increase pool size or investigate connection leaks.
+      Namespace: AdaptiveTicketPricing
+      MetricName: hikaricp.connections.active
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 18
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
